@@ -29,10 +29,7 @@ jobs:
       - name: Make Gradle Wrapper executable
         run: |
           cd android
-          chmod +x gradlew || true
-          if [ ! -f "gradlew" ]; then
-            gradle wrapper
-          fi
+          chmod +x gradlew
 
       - name: Build Android APK (Debug)
         run: |
