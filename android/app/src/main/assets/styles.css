@@ -1294,6 +1294,258 @@ body::before {
 }
 
 /* ==========================================================================
+   Agent Board & Harness Modal
+   ========================================================================== */
+
+.agent-board-card {
+  max-width: 860px;
+  width: 95vw;
+  height: 85vh;
+}
+
+.agent-board-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.board-badge {
+  font-size: 18px;
+}
+
+.agent-board-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.board-nav-tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+  overflow-x: auto;
+}
+
+.board-tab-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.board-tab-btn.active {
+  background: var(--accent-gradient);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.board-tab-content {
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+
+.board-tab-content.active {
+  display: flex;
+}
+
+/* Handoff Cards */
+.handoffs-list, .tasks-pipeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.handoff-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all var(--transition-fast);
+}
+
+.handoff-card:hover {
+  border-color: var(--accent-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.handoff-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.handoff-id {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.handoff-status-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.handoff-status-badge.complete {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--success-color);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.handoff-status-badge.in_progress {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--accent-color);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.handoff-status-badge.blocked {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--error-color);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.handoff-field {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.handoff-field strong {
+  color: var(--text-primary);
+}
+
+.handoff-artifact-path {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 3px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  display: inline-block;
+}
+
+.handoff-evidence {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-muted);
+}
+
+/* Task Pipeline Cards */
+.task-pipeline-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.task-pipeline-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.task-id-badge {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--accent-light);
+  color: var(--accent-color);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.task-pipeline-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Context Doc Selector */
+.context-doc-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.context-pill {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.context-pill.active {
+  background: var(--accent-color);
+  color: #ffffff;
+}
+
+.context-doc-view, .board-markdown, .charter-markdown {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  overflow-y: auto;
+  max-height: 58vh;
+  padding: 8px 4px;
+}
+
+.context-doc-view h1, .board-markdown h1, .charter-markdown h1 {
+  font-size: 20px;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.context-doc-view h2, .board-markdown h2, .charter-markdown h2 {
+  font-size: 16px;
+  margin: 14px 0 8px;
+  color: var(--text-primary);
+}
+
+.context-doc-view table, .board-markdown table, .charter-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 12.5px;
+}
+
+.context-doc-view th, .board-markdown th, .charter-markdown th,
+.context-doc-view td, .board-markdown td, .charter-markdown td {
+  border: 1px solid var(--border-color);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+/* ==========================================================================
    Mobile Responsive & Android WebView Adaptations
    ========================================================================== */
 

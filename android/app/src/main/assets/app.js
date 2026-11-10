@@ -142,6 +142,14 @@
     artifactModalFrame: document.getElementById('artifactModalFrame'),
     artifactModalName: document.getElementById('artifactModalName'),
     reloadArtifactBtn: document.getElementById('reloadArtifactBtn'),
+    openAgentBoardBtn: document.getElementById('openAgentBoardBtn'),
+    agentBoardModal: document.getElementById('agentBoardModal'),
+    closeAgentBoardModal: document.getElementById('closeAgentBoardModal'),
+    boardMarkdownView: document.getElementById('boardMarkdownView'),
+    handoffsList: document.getElementById('handoffsList'),
+    tasksPipelineList: document.getElementById('tasksPipelineList'),
+    contextDocView: document.getElementById('contextDocView'),
+    charterMarkdownView: document.getElementById('charterMarkdownView'),
   };
 
   // --- Helper: Generate UUID ---
@@ -1382,6 +1390,204 @@
         }
       });
     }
+
+    // Agent Board & Solo Runtime Harness Modal
+    if (elements.openAgentBoardBtn) {
+      elements.openAgentBoardBtn.addEventListener('click', () => {
+        openModal(elements.agentBoardModal);
+        loadAgentBoardData();
+        closeSidebarOnMobile();
+      });
+    }
+
+    if (elements.closeAgentBoardModal) {
+      elements.closeAgentBoardModal.addEventListener('click', () => closeModal(elements.agentBoardModal));
+    }
+
+    document.querySelectorAll('.board-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.board-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.board-tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = btn.dataset.tab;
+        const target = document.getElementById(`tabContent${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
+        if (target) target.classList.add('active');
+      });
+    });
+
+    document.querySelectorAll('.context-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.context-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        loadContextDoc(pill.dataset.doc);
+      });
+    });
+  }
+
+  // --- Agent Board & Solo Runtime Harness ---
+  const DEFAULT_BOARD_MD = `# 📋 AGENT BOARD (Single Writer)
+> **Writer Contract**: Only ONE agent/runtime writes to this board at any moment. Never concurrent writers ("two writers lose an edit with no error and no warning").
+
+---
+
+## 🎯 Current Mission
+- **Objective**: Establish the autonomous Solo Runtime File Contract Harness for ai.maran.co.in.
+- **Status**: \`IN_PROGRESS\`
+- **Active Task**: \`tasks/T-001.md\`
+- **Last Handoff**: \`handoffs/H-000.md\`
+- **Safety Mode**: \`Solo Runtime (Permission Ladder Active)\`
+
+---
+
+## 🚦 Permission Ladder Status
+| Level | Permissions | Status |
+|:---|:---|:---|
+| 🟢 **Green** | Read files, search codebase, draft internal files, run test routines | Auto-Permitted |
+| 🟡 **Yellow** | Edit existing codebase files (\`frontend/\`, \`src/\`, \`android/\`) | Inspection & Diff Log Required |
+| 🔴 **Red** | Git push, delete database, publish APK release, API secret mutation | User Confirmation Gate |
+`;
+
+  const DEFAULT_CHARTER_MD = `# 📜 Agent Charter & Safety Protocol
+
+> **Core Philosophy**: *"Handoff quality is a file format problem, not a prompting problem. Build this before the chat surface."*
+
+---
+
+## 1. Execution Lifecycle Contract
+Role ──▶ Input ──▶ Action ──▶ Output ──▶ Acceptance Criteria ──▶ Handoff
+
+---
+
+## 2. Permission Ladder
+- 🟢 **Green**: Read, search, draft internal files, run saved routines.
+- 🟡 **Yellow**: Edit existing repository files (diff inspection).
+- 🔴 **Red**: Send, publish, buy, delete, sign (always ask human gate).
+
+---
+
+## 3. Login Handoff Protocol
+*"The agent drives until a login wall, hands you the screen, resumes on the same session. The bot ends up with a session. You keep the secret."*
+`;
+
+  const DEFAULT_HANDOFFS = [
+    {
+      id: 'H-000',
+      title: 'UI Overhaul & Chain-of-Thought APK Deploy',
+      status: 'COMPLETE',
+      artifact: 'latest-apk/app-debug.apk',
+      objective: 'Overhaul UI with Apple-style glassmorphism, shadcn Trace reasoning stream, and live code artifacts.',
+      evidence: 'node -c app.js passed; GitHub Actions build succeeded; adb install verified on Samsung Galaxy A16.',
+      blockers: 'NONE',
+      nextAction: 'Implement Solo Runtime File Contract Harness (agent/board.md, tasks/, handoffs/, context/).'
+    }
+  ];
+
+  const DEFAULT_TASKS = [
+    { id: 'T-000', title: 'LobeChat Glassmorphism UI, shadcn Trace reasoning stream, and live code artifacts', status: 'DONE' },
+    { id: 'T-001', title: 'Implement Solo Runtime File Contract Harness (Disk contract, Handoff schema validator, Board viewer)', status: 'IN_PROGRESS' },
+    { id: 'T-002', title: 'Autonomous Tool Calling for Search & File System in solo agent loop', status: 'TODO' },
+    { id: 'T-003', title: 'Offline SQLite Vector embeddings for localized context lookup', status: 'TODO' }
+  ];
+
+  async function loadAgentBoardData() {
+    let boardContent = DEFAULT_BOARD_MD;
+    let charterContent = DEFAULT_CHARTER_MD;
+    let handoffs = DEFAULT_HANDOFFS;
+    let tasks = DEFAULT_TASKS;
+
+    if (state.settings.serverUrl) {
+      try {
+        const boardRes = await fetch(`${state.settings.serverUrl.replace(/\/+$/, '')}/api/agent/board`);
+        if (boardRes.ok) {
+          const data = await boardRes.json();
+          boardContent = data.content || boardContent;
+        }
+
+        const tasksRes = await fetch(`${state.settings.serverUrl.replace(/\/+$/, '')}/api/agent/tasks`);
+        if (tasksRes.ok) {
+          tasks = await tasksRes.json();
+        }
+
+        const handoffsRes = await fetch(`${state.settings.serverUrl.replace(/\/+$/, '')}/api/agent/handoffs`);
+        if (handoffsRes.ok) {
+          handoffs = await handoffsRes.json();
+        }
+
+        const charterRes = await fetch(`${state.settings.serverUrl.replace(/\/+$/, '')}/api/agent/context/charter`);
+        if (charterRes.ok) {
+          const data = await charterRes.json();
+          charterContent = data.content || charterContent;
+        }
+      } catch (e) {
+        console.warn('Agent API fallback to local default contract:', e);
+      }
+    }
+
+    renderMarkdownInto(elements.boardMarkdownView, boardContent);
+    renderMarkdownInto(elements.charterMarkdownView, charterContent);
+
+    elements.tasksPipelineList.innerHTML = '';
+    tasks.forEach(t => {
+      const card = document.createElement('div');
+      card.className = 'task-pipeline-card';
+      const statusClass = (t.status || 'TODO').toLowerCase();
+      card.innerHTML = `
+        <div class="task-pipeline-left">
+          <span class="task-id-badge">${escapeHtml(t.id)}</span>
+          <span class="task-pipeline-title">${escapeHtml(t.title)}</span>
+        </div>
+        <span class="handoff-status-badge ${statusClass}">${escapeHtml(t.status)}</span>
+      `;
+      elements.tasksPipelineList.appendChild(card);
+    });
+
+    elements.handoffsList.innerHTML = '';
+    handoffs.forEach(h => {
+      const card = document.createElement('div');
+      card.className = 'handoff-card';
+      const statusClass = (h.status || 'COMPLETE').toLowerCase();
+      card.innerHTML = `
+        <div class="handoff-header">
+          <span class="handoff-id">🤝 ${escapeHtml(h.id)}: ${escapeHtml(h.title || 'Checkpoint')}</span>
+          <span class="handoff-status-badge ${statusClass}">${escapeHtml(h.status)}</span>
+        </div>
+        <div class="handoff-field">
+          <strong>Objective:</strong> ${escapeHtml(h.objective || 'N/A')}
+        </div>
+        <div class="handoff-field">
+          <strong>Artifact:</strong> <span class="handoff-artifact-path">${escapeHtml(h.artifact || 'None')}</span>
+        </div>
+        <div class="handoff-field">
+          <strong>Evidence:</strong>
+          <div class="handoff-evidence">${escapeHtml(h.evidence || 'N/A')}</div>
+        </div>
+        <div class="handoff-field">
+          <strong>Blockers:</strong> ${escapeHtml(h.blockers || 'NONE')}
+        </div>
+        <div class="handoff-field">
+          <strong>Next Action:</strong> ${escapeHtml(h.nextAction || 'N/A')}
+        </div>
+      `;
+      elements.handoffsList.appendChild(card);
+    });
+
+    loadContextDoc('architecture');
+  }
+
+  async function loadContextDoc(docName) {
+    let content = `# Architecture Context\nDocumentation for \`${docName}\`.`;
+    if (state.settings.serverUrl) {
+      try {
+        const res = await fetch(`${state.settings.serverUrl.replace(/\/+$/, '')}/api/agent/context/${docName}`);
+        if (res.ok) {
+          const data = await res.json();
+          content = data.content || content;
+        }
+      } catch (e) {
+        console.warn('Failed loading context doc from server:', e);
+      }
+    }
+    renderMarkdownInto(elements.contextDocView, content);
   }
 
   document.addEventListener('DOMContentLoaded', init);

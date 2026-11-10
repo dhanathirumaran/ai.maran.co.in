@@ -1,3 +1,4 @@
+pub mod agent;
 pub mod chat;
 pub mod conversations;
 pub mod personas;
@@ -7,6 +8,7 @@ use axum::{
     routing::{delete, get, post},
     Json, Router,
 };
+use agent::{get_board, get_context_doc, list_handoffs, list_tasks, validate_handoff};
 use chat::{chat_stream, AppState};
 use conversations::{
     create_conversation, delete_conversation, get_conversation, list_conversations,
@@ -40,6 +42,12 @@ pub fn create_router(app_state: AppState) -> Router {
         )
         .route("/personas", get(list_personas).post(create_persona))
         .route("/personas/:id", delete(delete_persona))
+        // Autonomous Agent File-Contract Harness Routes
+        .route("/agent/board", get(get_board))
+        .route("/agent/tasks", get(list_tasks))
+        .route("/agent/handoffs", get(list_handoffs))
+        .route("/agent/handoffs/validate", post(validate_handoff))
+        .route("/agent/context/:doc", get(get_context_doc))
         .with_state(app_state);
 
     Router::new()

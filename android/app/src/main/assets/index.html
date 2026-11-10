@@ -37,6 +37,14 @@
       </div>
 
       <div class="sidebar-footer">
+        <button class="footer-btn" id="openAgentBoardBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+          </svg>
+          <span>Agent Board & Handoffs</span>
+        </button>
         <button class="footer-btn" id="openPersonasBtn">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -270,6 +278,53 @@
       </div>
       <div class="modal-body artifact-modal-body">
         <iframe id="artifactModalFrame" sandbox="allow-scripts allow-modals" class="artifact-modal-iframe"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent Board & Harness Modal -->
+  <div class="modal agent-board-modal" id="agentBoardModal">
+    <div class="modal-card agent-board-card">
+      <div class="modal-header">
+        <div class="agent-board-header-title">
+          <span class="board-badge">📋</span>
+          <h3>Solo Runtime Agent Harness</h3>
+        </div>
+        <button class="icon-btn" id="closeAgentBoardModal">&times;</button>
+      </div>
+      <div class="modal-body agent-board-body">
+        <div class="board-nav-tabs">
+          <button class="board-tab-btn active" data-tab="board">Master Board</button>
+          <button class="board-tab-btn" data-tab="handoffs">Handoffs</button>
+          <button class="board-tab-btn" data-tab="tasks">Tasks</button>
+          <button class="board-tab-btn" data-tab="context">Context Library</button>
+          <button class="board-tab-btn" data-tab="charter">Charter & Safety</button>
+        </div>
+
+        <div class="board-tab-content active" id="tabContentBoard">
+          <div class="board-markdown" id="boardMarkdownView"></div>
+        </div>
+
+        <div class="board-tab-content" id="tabContentHandoffs">
+          <div class="handoffs-list" id="handoffsList"></div>
+        </div>
+
+        <div class="board-tab-content" id="tabContentTasks">
+          <div class="tasks-pipeline-list" id="tasksPipelineList"></div>
+        </div>
+
+        <div class="board-tab-content" id="tabContentContext">
+          <div class="context-doc-selector">
+            <button class="context-pill active" data-doc="architecture">Architecture</button>
+            <button class="context-pill" data-doc="conventions">Conventions</button>
+            <button class="context-pill" data-doc="glossary">Glossary</button>
+          </div>
+          <div class="context-doc-view" id="contextDocView"></div>
+        </div>
+
+        <div class="board-tab-content" id="tabContentCharter">
+          <div class="charter-markdown" id="charterMarkdownView"></div>
+        </div>
       </div>
     </div>
   </div>
