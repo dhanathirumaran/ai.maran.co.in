@@ -1,4 +1,4 @@
-// AI Studio Universal Frontend Application Logic
+// AI Studio Universal Frontend Application Logic (LobeChat & Apple Glassmorphic Design)
 (() => {
   // --- State ---
   const state = {
@@ -8,11 +8,12 @@
     attachments: [],
     isGenerating: false,
     abortController: null,
+    currentUtterance: null,
     settings: {
       serverUrl: localStorage.getItem('ai_server_url') || '',
-      baseUrl: localStorage.getItem('ai_base_url') || 'https://generativelanguage.googleapis.com/v1beta/openai/',
-      apiKey: localStorage.getItem('ai_api_key') || '',
-      model: localStorage.getItem('ai_model') || 'gemini-2.0-flash',
+      baseUrl: localStorage.getItem('ai_base_url') || 'https://omni.pulsemindstudios.com/v1',
+      apiKey: localStorage.getItem('ai_api_key') || 'sk-1f024b5463df9ab9-773f64-ad742b97',
+      model: localStorage.getItem('ai_model') || 'ddgw/gpt-5.4-mini',
       systemPrompt: localStorage.getItem('ai_system_prompt') || '',
       temperature: parseFloat(localStorage.getItem('ai_temp')) || 0.7,
       maxTokens: parseInt(localStorage.getItem('ai_max_tokens')) || 4096,
@@ -24,6 +25,7 @@
     omni: {
       baseUrl: 'https://omni.pulsemindstudios.com/v1',
       model: 'ddgw/gpt-5.4-mini',
+      reasoningModel: 'antigravity/claude-opus-4-6-thinking',
     },
     gemini: {
       baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
@@ -78,6 +80,19 @@
     },
   ];
 
+  // --- SVG Icons Helper (shadcn / Lucide inspired) ---
+  const ICONS = {
+    spin: `<svg class="trace-icon-spin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`,
+    check: `<svg class="trace-icon-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>`,
+    alert: `<svg class="trace-icon-alert" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+    chevron: `<svg class="trace-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>`,
+    volume: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`,
+    volumeStop: `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`,
+    copy: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+    trash: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+    maximize: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`,
+  };
+
   // --- DOM Elements ---
   const elements = {
     sidebar: document.getElementById('sidebar'),
@@ -122,6 +137,11 @@
     newPersonaDesc: document.getElementById('newPersonaDesc'),
     newPersonaPrompt: document.getElementById('newPersonaPrompt'),
     saveNewPersonaBtn: document.getElementById('saveNewPersonaBtn'),
+    artifactModal: document.getElementById('artifactModal'),
+    closeArtifactModal: document.getElementById('closeArtifactModal'),
+    artifactModalFrame: document.getElementById('artifactModalFrame'),
+    artifactModalName: document.getElementById('artifactModalName'),
+    reloadArtifactBtn: document.getElementById('reloadArtifactBtn'),
   };
 
   // --- Helper: Generate UUID ---
@@ -167,12 +187,11 @@
   }
 
   function updateModelBadge() {
-    elements.activeModelLabel.textContent = state.settings.model || 'gemini-2.0-flash';
+    elements.activeModelLabel.textContent = state.settings.model || 'ddgw/gpt-5.4-mini';
   }
 
-  // --- Conversations Management (Hybrid Server + LocalStorage) ---
+  // --- Conversations Management ---
   async function loadConversations() {
-    // If serverUrl is configured and not running from standalone file:// without server
     if (state.settings.serverUrl) {
       try {
         const url = `${state.settings.serverUrl.replace(/\/+$/, '')}/api/conversations`;
@@ -183,11 +202,10 @@
           return;
         }
       } catch (err) {
-        console.warn('Server unreachable, falling back to local storage:', err);
+        console.warn('Server unreachable, using local storage:', err);
       }
     }
 
-    // LocalStorage Fallback
     try {
       const raw = localStorage.getItem('ai_local_conversations');
       state.conversations = raw ? JSON.parse(raw) : [];
@@ -215,7 +233,7 @@
 
     if (filtered.length === 0) {
       elements.conversationsList.innerHTML = `
-        <div style="padding: 12px; color: var(--text-muted); font-size: 13px; text-align: center;">
+        <div style="padding: 16px; color: var(--text-muted); font-size: 13px; text-align: center;">
           No conversations yet
         </div>`;
       return;
@@ -230,10 +248,7 @@
         <span class="conv-title">${escapeHtml(c.title || 'New Chat')}</span>
         <div class="conv-actions">
           <button class="conv-action-btn delete" title="Delete conversation">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
+            ${ICONS.trash}
           </button>
         </div>
       `;
@@ -259,7 +274,6 @@
     state.currentConversationId = id;
     renderConversations(elements.searchChats.value);
 
-    // Try server first if configured
     if (state.settings.serverUrl) {
       try {
         const url = `${state.settings.serverUrl.replace(/\/+$/, '')}/api/conversations/${id}`;
@@ -274,7 +288,6 @@
       }
     }
 
-    // Local conversation lookup
     const conv = state.conversations.find(c => c.id === id);
     if (conv && conv.messages) {
       renderMessageHistory(conv.messages);
@@ -295,13 +308,13 @@
       const atts = typeof msg.attachments === 'string'
         ? JSON.parse(msg.attachments)
         : (msg.attachments || (msg.attachments_json ? JSON.parse(msg.attachments_json) : null));
-      appendMessageUI(msg.role, msg.content, atts, msg.reasoning);
+      appendMessageUI(msg.role, msg.content, atts, msg.reasoning, msg.id, msg.created_at);
     });
     scrollToBottom();
   }
 
   async function deleteConversation(id) {
-    if (!confirm('Are you sure you want to delete this chat?')) return;
+    if (!confirm('Are you sure you want to delete this conversation?')) return;
 
     if (state.settings.serverUrl) {
       try {
@@ -347,7 +360,6 @@
       }
     }
 
-    // Local / Default Personas
     const custom = JSON.parse(localStorage.getItem('ai_custom_personas') || '[]');
     state.personas = [...DEFAULT_PERSONAS, ...custom];
     renderPersonas();
@@ -451,22 +463,304 @@
     });
   }
 
-  // --- Chat Stream Execution (Universal Direct API & Server Mode) ---
+  // --- Trace / Chain-of-Thought Component Builder ---
+  function parseReasoningSteps(raw) {
+    if (!raw || !raw.trim()) return [];
+    // Split by Markdown headers (###, ##), numbered steps (1., 2.), or paragraphs
+    const lines = raw.split(/\n\s*\n+/);
+    const steps = [];
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      // Extract title from first line
+      const firstLine = trimmed.split('\n')[0].replace(/^[#*\s\d.-]+/, '').trim();
+      const title = firstLine.length > 60 ? `${firstLine.slice(0, 60)}...` : firstLine;
+      steps.push({
+        title: title || 'Analytical thought step',
+        body: trimmed,
+      });
+    }
+    return steps;
+  }
+
+  function buildTraceElement(isStreaming = false, rawReasoning = '', durationSec = null) {
+    const container = document.createElement('div');
+    container.className = 'trace-container';
+
+    const details = document.createElement('details');
+    details.className = 'trace-collapsible';
+    details.open = isStreaming; // Open during streaming, collapsed when done
+
+    const summary = document.createElement('summary');
+    summary.className = 'trace-summary';
+
+    const left = document.createElement('div');
+    left.className = 'trace-summary-left';
+
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'trace-status-icon';
+    iconSpan.innerHTML = isStreaming ? ICONS.spin : ICONS.check;
+
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'trace-title';
+    titleSpan.textContent = isStreaming ? 'Thinking...' : 'Reasoning Process';
+
+    const durationBadge = document.createElement('span');
+    durationBadge.className = 'trace-duration-badge';
+    if (durationSec !== null) {
+      durationBadge.textContent = `${durationSec}s`;
+    }
+
+    left.appendChild(iconSpan);
+    left.appendChild(titleSpan);
+    left.appendChild(durationBadge);
+
+    const chevron = document.createElement('span');
+    chevron.innerHTML = ICONS.chevron;
+
+    summary.appendChild(left);
+    summary.appendChild(chevron);
+    details.appendChild(summary);
+
+    const content = document.createElement('div');
+    content.className = 'trace-content';
+
+    const treeLine = document.createElement('div');
+    treeLine.className = 'trace-tree-line';
+    content.appendChild(treeLine);
+
+    const stepList = document.createElement('div');
+    stepList.className = 'trace-step-list';
+
+    // Parse and render steps
+    const steps = parseReasoningSteps(rawReasoning);
+    if (steps.length > 0) {
+      steps.forEach((s, idx) => {
+        const stepRow = document.createElement('div');
+        stepRow.className = `trace-step ${idx === steps.length - 1 && isStreaming ? 'running' : 'done'}`;
+        stepRow.innerHTML = `
+          <div class="trace-line">
+            <span class="trace-step-dot"></span>
+            <span class="trace-step-title">${escapeHtml(s.title)}</span>
+          </div>
+          <div class="trace-step-body">${escapeHtml(s.body)}</div>
+        `;
+        stepList.appendChild(stepRow);
+      });
+    } else {
+      const rawDiv = document.createElement('div');
+      rawDiv.className = 'trace-raw-stream';
+      rawDiv.textContent = rawReasoning || 'Analyzing query...';
+      stepList.appendChild(rawDiv);
+    }
+
+    content.appendChild(stepList);
+    details.appendChild(content);
+    container.appendChild(details);
+
+    return {
+      container,
+      details,
+      summary,
+      iconSpan,
+      titleSpan,
+      durationBadge,
+      stepList,
+    };
+  }
+
+  // --- Artifacts System: Live Interactive Previews ---
+  let activeArtifactCode = '';
+
+  function detectAndRenderArtifacts(container) {
+    const codeBlocks = container.querySelectorAll('pre code');
+    codeBlocks.forEach((codeEl) => {
+      const pre = codeEl.parentElement;
+      if (pre.closest('.artifact-card')) return;
+
+      const lang = (codeEl.className.match(/language-(\w+)/) || [, ''])[1].toLowerCase();
+      const rawCode = codeEl.innerText.trim();
+
+      // Check if it qualifies as an artifact (HTML document, SVG, or explicit interactive markup)
+      const isHtml = lang === 'html' || rawCode.startsWith('<!DOCTYPE html>') || rawCode.startsWith('<html') || (rawCode.includes('<head>') && rawCode.includes('<body>'));
+      const isSvg = lang === 'svg' || (rawCode.startsWith('<svg') && rawCode.endsWith('</svg>'));
+
+      if (isHtml || isSvg) {
+        const artifactCard = document.createElement('div');
+        artifactCard.className = 'artifact-card';
+
+        const artifactTitle = isSvg ? 'Vector SVG Artifact' : 'Interactive Web Artifact';
+        const docHtml = isSvg
+          ? `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#fff;overflow:hidden;}</style></head><body>${rawCode}</body></html>`
+          : rawCode;
+
+        artifactCard.innerHTML = `
+          <div class="artifact-header">
+            <div class="artifact-info">
+              <span class="artifact-badge">⚡</span>
+              <span>${artifactTitle}</span>
+            </div>
+            <div class="artifact-tabs">
+              <button class="artifact-tab-btn active" data-tab="preview">Preview</button>
+              <button class="artifact-tab-btn" data-tab="code">Code</button>
+            </div>
+            <div class="artifact-actions">
+              <button class="artifact-btn fullscreen-btn" title="Fullscreen Preview">${ICONS.maximize}</button>
+              <button class="artifact-btn copy-btn" title="Copy Code">${ICONS.copy}</button>
+            </div>
+          </div>
+          <div class="artifact-view-panel">
+            <div class="artifact-preview-panel active">
+              <iframe class="artifact-iframe" sandbox="allow-scripts allow-modals"></iframe>
+            </div>
+            <div class="artifact-code-panel"></div>
+          </div>
+        `;
+
+        const iframe = artifactCard.querySelector('.artifact-iframe');
+        iframe.srcdoc = docHtml;
+
+        const previewPanel = artifactCard.querySelector('.artifact-preview-panel');
+        const codePanel = artifactCard.querySelector('.artifact-code-panel');
+        const tabBtns = artifactCard.querySelectorAll('.artifact-tab-btn');
+
+        // Move pre element into code panel
+        codePanel.appendChild(pre.cloneNode(true));
+
+        tabBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (btn.dataset.tab === 'preview') {
+              previewPanel.classList.add('active');
+              codePanel.classList.remove('active');
+            } else {
+              codePanel.classList.add('active');
+              previewPanel.classList.remove('active');
+            }
+          });
+        });
+
+        // Fullscreen popout
+        artifactCard.querySelector('.fullscreen-btn').addEventListener('click', () => {
+          activeArtifactCode = docHtml;
+          elements.artifactModalName.textContent = artifactTitle;
+          elements.artifactModalFrame.srcdoc = docHtml;
+          openModal(elements.artifactModal);
+        });
+
+        // Copy button
+        artifactCard.querySelector('.copy-btn').addEventListener('click', (e) => {
+          navigator.clipboard.writeText(rawCode);
+          e.currentTarget.style.color = 'var(--success-color)';
+          setTimeout(() => {
+            e.currentTarget.style.color = '';
+          }, 2000);
+        });
+
+        // Replace original <pre> with artifactCard
+        pre.replaceWith(artifactCard);
+      }
+    });
+  }
+
+  // --- Voice Synthesis (TTS) Assistant Toolbar ---
+  function speakMessage(text, btn) {
+    if (!('speechSynthesis' in window)) {
+      alert('Speech synthesis is not supported on this device/browser.');
+      return;
+    }
+
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      if (state.currentUtterance && state.currentUtterance.btn === btn) {
+        btn.classList.remove('speaking');
+        btn.innerHTML = `${ICONS.volume} Speak`;
+        state.currentUtterance = null;
+        return;
+      }
+    }
+
+    // Clean markdown text for pleasant natural voice
+    const cleanText = text
+      .replace(/```[\s\S]*?```/g, ' [Code omitted] ')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/[#*_~>\-]/g, ' ')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .trim();
+
+    if (!cleanText) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    btn.classList.add('speaking');
+    btn.innerHTML = `${ICONS.volumeStop} Stop`;
+    state.currentUtterance = { utterance, btn };
+
+    utterance.onend = () => {
+      btn.classList.remove('speaking');
+      btn.innerHTML = `${ICONS.volume} Speak`;
+      state.currentUtterance = null;
+    };
+
+    utterance.onerror = () => {
+      btn.classList.remove('speaking');
+      btn.innerHTML = `${ICONS.volume} Speak`;
+      state.currentUtterance = null;
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function createMessageToolbar(text, role, msgId, timestamp) {
+    const toolbar = document.createElement('div');
+    toolbar.className = 'message-actions-toolbar';
+
+    if (role === 'assistant') {
+      const speakBtn = document.createElement('button');
+      speakBtn.className = 'action-pill-btn';
+      speakBtn.innerHTML = `${ICONS.volume} Speak`;
+      speakBtn.addEventListener('click', () => speakMessage(text, speakBtn));
+      toolbar.appendChild(speakBtn);
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'action-pill-btn';
+      copyBtn.innerHTML = `${ICONS.copy} Copy`;
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(text);
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => {
+          copyBtn.innerHTML = `${ICONS.copy} Copy`;
+        }, 2000);
+      });
+      toolbar.appendChild(copyBtn);
+    }
+
+    const timeLabel = document.createElement('span');
+    timeLabel.className = 'message-timestamp';
+    const date = timestamp ? new Date(timestamp) : new Date();
+    timeLabel.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    toolbar.appendChild(timeLabel);
+
+    return toolbar;
+  }
+
+  // --- Chat Stream Execution ---
   async function sendMessage() {
     const text = elements.messageInput.value.trim();
     if (!text && state.attachments.length === 0) return;
     if (state.isGenerating) return;
 
-    // Check credentials if not using a server
     if (!state.settings.serverUrl && !state.settings.apiKey) {
       openModal(elements.settingsModal);
-      alert('Please enter your API Key (e.g. Gemini or OpenAI) in Settings to get started!');
+      alert('Please enter your API Key in Settings to get started!');
       return;
     }
 
     elements.welcomeScreen.style.display = 'none';
 
-    // Copy attachments and clear draft tray
     const attachmentsPayload = [...state.attachments];
     state.attachments = [];
     renderAttachmentTray();
@@ -476,7 +770,7 @@
     elements.messageInput.value = '';
     elements.messageInput.style.height = 'auto';
 
-    // Prepare Assistant Placeholder
+    // Prepare Assistant Bubble
     const assistantBubble = appendMessageUI('assistant', '');
     const cursor = document.createElement('span');
     cursor.className = 'streaming-cursor';
@@ -487,7 +781,6 @@
 
     state.abortController = new AbortController();
 
-    // Ensure conversation exists
     if (!state.currentConversationId) {
       state.currentConversationId = generateId();
       const title = text.length > 30 ? `${text.slice(0, 30)}...` : (text || 'New Chat');
@@ -519,48 +812,53 @@
     let accumulatedReasoning = '';
     let isThinking = false;
     let thinkingStartTime = null;
-    let reasoningDetailsEl = null;
-    let reasoningSummaryEl = null;
-    let reasoningContentEl = null;
+    let thinkingTimerInterval = null;
+    let traceObj = null;
     let insideThinkTag = false;
 
     function handleReasoningToken(chunk) {
       if (!chunk) return;
-      if (!reasoningDetailsEl) {
+      if (!traceObj) {
         thinkingStartTime = Date.now();
         isThinking = true;
-        reasoningDetailsEl = document.createElement('details');
-        reasoningDetailsEl.className = 'reasoning-trace';
-        reasoningDetailsEl.open = true;
-
-        reasoningSummaryEl = document.createElement('summary');
-        reasoningSummaryEl.className = 'reasoning-summary';
-        reasoningSummaryEl.innerHTML = `
-          <span class="reasoning-spinner"></span>
-          <span>Thinking...</span>
-          <span class="reasoning-chevron">▼</span>
-        `;
-
-        reasoningContentEl = document.createElement('div');
-        reasoningContentEl.className = 'reasoning-content';
-
-        reasoningDetailsEl.appendChild(reasoningSummaryEl);
-        reasoningDetailsEl.appendChild(reasoningContentEl);
-
+        traceObj = buildTraceElement(true, '', null);
         const answerBody = assistantBubble.querySelector('.answer-body') || assistantBubble;
-        assistantBubble.insertBefore(reasoningDetailsEl, answerBody);
+        assistantBubble.insertBefore(traceObj.container, answerBody);
+
+        // Real-time duration timer updating every 100ms
+        thinkingTimerInterval = setInterval(() => {
+          if (isThinking && thinkingStartTime) {
+            const elapsed = ((Date.now() - thinkingStartTime) / 1000).toFixed(1);
+            traceObj.durationBadge.textContent = `${elapsed}s`;
+          }
+        }, 100);
       }
 
       accumulatedReasoning += chunk;
-      reasoningContentEl.textContent = accumulatedReasoning;
-      reasoningContentEl.scrollTop = reasoningContentEl.scrollHeight;
+      // Update trace step content in real time
+      const steps = parseReasoningSteps(accumulatedReasoning);
+      traceObj.stepList.innerHTML = '';
+      if (steps.length > 0) {
+        steps.forEach((s, idx) => {
+          const stepRow = document.createElement('div');
+          stepRow.className = `trace-step ${idx === steps.length - 1 ? 'running' : 'done'}`;
+          stepRow.innerHTML = `
+            <div class="trace-line">
+              <span class="trace-step-dot"></span>
+              <span class="trace-step-title">${escapeHtml(s.title)}</span>
+            </div>
+            <div class="trace-step-body">${escapeHtml(s.body)}</div>
+          `;
+          traceObj.stepList.appendChild(stepRow);
+        });
+      }
       scrollToBottom();
     }
 
     function handleContentToken(chunk) {
       if (!chunk) return;
 
-      // Handle <think> tags if model emits them in content
+      // Handle <think> tags emitted in content stream
       if (chunk.includes('<think>')) {
         insideThinkTag = true;
         const parts = chunk.split('<think>');
@@ -580,21 +878,21 @@
         return;
       }
 
-      // If we were thinking and real answer arrived, collapse thinking box
-      if (isThinking && reasoningDetailsEl) {
+      // Transition from thinking to content answer: auto-collapse trace
+      if (isThinking && traceObj) {
         isThinking = false;
+        clearInterval(thinkingTimerInterval);
         const duration = ((Date.now() - (thinkingStartTime || Date.now())) / 1000).toFixed(1);
-        reasoningSummaryEl.innerHTML = `
-          <span class="reasoning-check">✓</span>
-          <span>Thought for ${duration}s</span>
-          <span class="reasoning-chevron">▼</span>
-        `;
-        reasoningDetailsEl.open = false; // Auto-collapse!
+        traceObj.iconSpan.innerHTML = ICONS.check;
+        traceObj.titleSpan.textContent = 'Reasoning Process';
+        traceObj.durationBadge.textContent = `Thought for ${duration}s`;
+        traceObj.details.open = false; // Smooth auto-collapse!
       }
 
       accumulatedText += chunk;
       const answerBody = assistantBubble.querySelector('.answer-body') || assistantBubble;
       renderMarkdownInto(answerBody, accumulatedText);
+      detectAndRenderArtifacts(answerBody);
       answerBody.appendChild(cursor);
       scrollToBottom();
     }
@@ -628,7 +926,7 @@
           onReasoning: handleReasoningToken,
         });
       } else {
-        // --- DIRECT LLM API MODE (Standalone in APK / Browser) ---
+        // --- DIRECT LLM API MODE ---
         let endpoint = state.settings.baseUrl.trim().replace(/\/+$/, '');
         if (!endpoint.endsWith('/chat/completions')) {
           if (endpoint.endsWith('/v1') || endpoint.endsWith('/openai')) {
@@ -643,14 +941,12 @@
           messages.push({ role: 'system', content: state.settings.systemPrompt });
         }
 
-        // Add history messages
         if (currentConv && currentConv.messages) {
           currentConv.messages.slice(0, -1).forEach(m => {
             messages.push({ role: m.role, content: m.content });
           });
         }
 
-        // Build current message with multimodal support
         if (attachmentsPayload.length > 0) {
           const parts = [];
           if (text) parts.push({ type: 'text', text: text });
@@ -712,24 +1008,28 @@
     } finally {
       cursor.remove();
       setGeneratingState(false);
+      clearInterval(thinkingTimerInterval);
 
-      if (isThinking && reasoningDetailsEl) {
+      if (isThinking && traceObj) {
         const duration = ((Date.now() - (thinkingStartTime || Date.now())) / 1000).toFixed(1);
-        reasoningSummaryEl.innerHTML = `
-          <span class="reasoning-check">✓</span>
-          <span>Thought for ${duration}s</span>
-          <span class="reasoning-chevron">▼</span>
-        `;
-        reasoningDetailsEl.open = false;
+        traceObj.iconSpan.innerHTML = ICONS.check;
+        traceObj.titleSpan.textContent = 'Reasoning Process';
+        traceObj.durationBadge.textContent = `Thought for ${duration}s`;
+        traceObj.details.open = false;
       }
 
       const answerBody = assistantBubble.querySelector('.answer-body') || assistantBubble;
       renderMarkdownInto(answerBody, accumulatedText);
+      detectAndRenderArtifacts(answerBody);
 
-      // Save assistant message to current conversation with reasoning
+      // Add toolbar with speak/copy actions
+      const msgId = generateId();
+      const toolbar = createMessageToolbar(accumulatedText, 'assistant', msgId, Date.now());
+      assistantBubble.appendChild(toolbar);
+
       if (currentConv && (accumulatedText || accumulatedReasoning)) {
         currentConv.messages.push({
-          id: generateId(),
+          id: msgId,
           role: 'assistant',
           content: accumulatedText,
           reasoning: accumulatedReasoning,
@@ -756,7 +1056,7 @@
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
-      buffer = lines.pop(); // keep partial line
+      buffer = lines.pop();
 
       for (const line of lines) {
         const trimmed = line.trim();
@@ -789,7 +1089,6 @@
               }
             }
           } catch {
-            // Direct text chunk
             if (dataStr !== '[DONE]' && onContent) onContent(dataStr);
           }
         }
@@ -803,7 +1102,7 @@
     elements.stopBtn.style.display = generating ? 'flex' : 'none';
   }
 
-  // --- Markdown & UI Rendering ---
+  // --- Markdown Rendering & Highlighting ---
   function renderMarkdownInto(container, markdownText) {
     if (typeof marked !== 'undefined') {
       try {
@@ -813,17 +1112,14 @@
             hljs.highlightElement(block);
           }
           const pre = block.parentElement;
-          if (!pre.querySelector('.code-header')) {
+          if (!pre.querySelector('.code-header') && !pre.closest('.artifact-card')) {
             const lang = (block.className.match(/language-(\w+)/) || [, 'code'])[1];
             const header = document.createElement('div');
             header.className = 'code-header';
             header.innerHTML = `
               <span>${lang}</span>
               <button class="copy-code-btn">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
+                ${ICONS.copy}
                 Copy
               </button>
             `;
@@ -831,11 +1127,7 @@
               navigator.clipboard.writeText(block.innerText);
               e.currentTarget.textContent = 'Copied!';
               setTimeout(() => {
-                e.currentTarget.innerHTML = `
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg> Copy`;
+                e.currentTarget.innerHTML = `${ICONS.copy} Copy`;
               }, 2000);
             });
             pre.insertBefore(header, block);
@@ -849,7 +1141,7 @@
     container.textContent = markdownText;
   }
 
-  function appendMessageUI(role, content, attachments, reasoning) {
+  function appendMessageUI(role, content, attachments, reasoning, msgId, timestamp) {
     const row = document.createElement('div');
     row.className = `message-row ${role}`;
 
@@ -876,29 +1168,29 @@
     }
 
     if (role === 'assistant') {
-      // If historical reasoning exists, render collapsible block
+      // Historical reasoning trace
       if (reasoning && reasoning.trim().length > 0) {
-        const details = document.createElement('details');
-        details.className = 'reasoning-trace';
-        details.innerHTML = `
-          <summary class="reasoning-summary">
-            <span class="reasoning-check">✓</span>
-            <span>Thought Process</span>
-            <span class="reasoning-chevron">▼</span>
-          </summary>
-          <div class="reasoning-content">${escapeHtml(reasoning)}</div>
-        `;
-        bubble.appendChild(details);
+        const trace = buildTraceElement(false, reasoning, null);
+        bubble.appendChild(trace.container);
       }
 
       const answerBody = document.createElement('div');
       answerBody.className = 'answer-body';
       renderMarkdownInto(answerBody, content);
+      detectAndRenderArtifacts(answerBody);
       bubble.appendChild(answerBody);
+
+      if (content) {
+        const toolbar = createMessageToolbar(content, 'assistant', msgId, timestamp);
+        bubble.appendChild(toolbar);
+      }
     } else {
       const textDiv = document.createElement('div');
       textDiv.textContent = content;
       bubble.appendChild(textDiv);
+
+      const toolbar = createMessageToolbar(content, 'user', msgId, timestamp);
+      bubble.appendChild(toolbar);
     }
 
     row.appendChild(bubble);
@@ -1019,9 +1311,9 @@
 
     elements.saveSettingsBtn.addEventListener('click', () => {
       state.settings.serverUrl = elements.settingServerUrl.value.trim();
-      state.settings.baseUrl = elements.settingBaseUrl.value.trim() || 'https://generativelanguage.googleapis.com/v1beta/openai/';
+      state.settings.baseUrl = elements.settingBaseUrl.value.trim() || 'https://omni.pulsemindstudios.com/v1';
       state.settings.apiKey = elements.settingApiKey.value.trim();
-      state.settings.model = elements.settingModel.value.trim() || 'gemini-2.0-flash';
+      state.settings.model = elements.settingModel.value.trim() || 'ddgw/gpt-5.4-mini';
       state.settings.systemPrompt = elements.settingSystemPrompt.value.trim();
       state.settings.temperature = parseFloat(elements.settingTemperature.value);
       state.settings.maxTokens = parseInt(elements.settingMaxTokens.value) || 4096;
@@ -1043,9 +1335,9 @@
       localStorage.clear();
       state.settings = {
         serverUrl: '',
-        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-        apiKey: '',
-        model: 'gemini-2.0-flash',
+        baseUrl: 'https://omni.pulsemindstudios.com/v1',
+        apiKey: 'sk-1f024b5463df9ab9-773f64-ad742b97',
+        model: 'ddgw/gpt-5.4-mini',
         systemPrompt: '',
         temperature: 0.7,
         maxTokens: 4096,
@@ -1078,6 +1370,18 @@
       elements.newPersonaPrompt.value = '';
       await loadPersonas();
     });
+
+    // Fullscreen Artifact Modal
+    if (elements.closeArtifactModal) {
+      elements.closeArtifactModal.addEventListener('click', () => closeModal(elements.artifactModal));
+    }
+    if (elements.reloadArtifactBtn) {
+      elements.reloadArtifactBtn.addEventListener('click', () => {
+        if (elements.artifactModalFrame && activeArtifactCode) {
+          elements.artifactModalFrame.srcdoc = activeArtifactCode;
+        }
+      });
+    }
   }
 
   document.addEventListener('DOMContentLoaded', init);
