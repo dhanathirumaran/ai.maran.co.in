@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.AIStudio" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@color/bg_primary</item>
+        <item name="android:navigationBarColor">@color/bg_primary</item>
+        <item name="colorPrimary">@color/accent_color</item>
+    </style>
+</resources>
