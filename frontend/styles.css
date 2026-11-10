@@ -6,59 +6,14 @@
   --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "SF Mono", "JetBrains Mono", Consolas, "Liberation Mono", Menlo, Courier, monospace;
 
-  /* Dark Theme (Default) - Apple Dark Glassmorphism */
-  --bg-primary: #0a0d14;
-  --bg-secondary: rgba(18, 24, 38, 0.72);
-  --bg-tertiary: rgba(30, 41, 59, 0.65);
-  --glass-surface: rgba(22, 29, 46, 0.68);
-  --glass-border: rgba(255, 255, 255, 0.09);
-  --glass-border-focus: rgba(99, 102, 241, 0.45);
-  --glass-blur: blur(24px) saturate(190%);
-  --border-color: rgba(255, 255, 255, 0.08);
-
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-
-  --accent-color: #3b82f6;
-  --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  --accent-hover: #60a5fa;
-  --accent-light: rgba(59, 130, 246, 0.15);
-
-  --user-bubble: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  --user-text: #ffffff;
-  --assistant-bubble: rgba(18, 24, 38, 0.75);
-  --assistant-border: rgba(255, 255, 255, 0.08);
-
-  --error-color: #ef4444;
-  --success-color: #10b981;
-  --warning-color: #f59e0b;
-  --code-bg: rgba(10, 14, 23, 0.92);
-
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
-
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
-  --radius-full: 9999px;
-
-  --sidebar-width: 290px;
-  --transition-fast: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-normal: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-body.light-theme {
-  /* Light Theme - Apple Frosted Light Glassmorphism */
-  --bg-primary: #f8fafc;
-  --bg-secondary: rgba(255, 255, 255, 0.82);
-  --bg-tertiary: rgba(241, 245, 249, 0.85);
-  --glass-surface: rgba(255, 255, 255, 0.88);
-  --glass-border: rgba(0, 0, 0, 0.07);
+  /* Native Apple Clean White / Light Aesthetic (Default) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --glass-surface: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(0, 0, 0, 0.08);
   --glass-border-focus: rgba(37, 99, 235, 0.4);
-  --glass-blur: blur(24px) saturate(190%);
+  --glass-blur: blur(20px) saturate(180%);
   --border-color: rgba(0, 0, 0, 0.08);
 
   --text-primary: #0f172a;
@@ -68,21 +23,47 @@ body.light-theme {
   --accent-color: #2563eb;
   --accent-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
   --accent-hover: #1d4ed8;
-  --accent-light: rgba(37, 99, 235, 0.1);
+  --accent-light: rgba(37, 99, 235, 0.08);
 
   --user-bubble: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   --user-text: #ffffff;
-  --assistant-bubble: rgba(255, 255, 255, 0.9);
-  --assistant-border: rgba(0, 0, 0, 0.06);
+  --assistant-bubble: #ffffff;
+  --assistant-border: rgba(0, 0, 0, 0.08);
 
   --error-color: #dc2626;
   --success-color: #059669;
   --warning-color: #d97706;
   --code-bg: #f8fafc;
 
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  --transition-fast: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.light-theme {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --glass-surface: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-border-focus: rgba(37, 99, 235, 0.4);
+  --border-color: rgba(0, 0, 0, 0.08);
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --assistant-bubble: #ffffff;
+  --assistant-border: rgba(0, 0, 0, 0.08);
 }
 
 /* Base Reset */
@@ -311,16 +292,58 @@ body::before {
 }
 
 .navbar {
-  height: 60px;
-  background: var(--bg-secondary);
+  height: 64px;
+  background: var(--glass-surface);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 18px;
+  padding: 0 20px;
   z-index: 10;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.bot-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bot-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.1));
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: var(--shadow-sm);
+}
+
+.bot-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bot-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text-primary);
+}
+
+.bot-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--success-color);
 }
 
 .navbar-left, .navbar-right {
@@ -527,15 +550,15 @@ body::before {
 
 .trace-collapsible {
   border: 1px solid var(--border-color);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-secondary);
   border-radius: var(--radius-md);
   overflow: hidden;
   transition: all var(--transition-fast);
 }
 
 .trace-collapsible[open] {
-  border-color: rgba(99, 102, 241, 0.35);
-  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(37, 99, 235, 0.3);
+  background: var(--bg-secondary);
 }
 
 .trace-summary {
@@ -689,8 +712,8 @@ body::before {
   margin-left: 24px;
   font-family: var(--font-mono);
   font-size: 11.5px;
-  color: var(--text-muted);
-  background: rgba(0, 0, 0, 0.25);
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   padding: 8px 12px;
@@ -706,7 +729,7 @@ body::before {
   font-size: 12px;
   line-height: 1.6;
   color: var(--text-secondary);
-  background: rgba(0, 0, 0, 0.28);
+  background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   padding: 10px 14px;

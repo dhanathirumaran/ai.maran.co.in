@@ -4,10 +4,10 @@
 ---
 
 ## 🎯 Current Mission
-- **Objective**: Establish the autonomous Solo Runtime File Contract Harness for `ai.maran.co.in`.
-- **Status**: `IN_PROGRESS`
-- **Active Task**: `tasks/T-001.md`
-- **Last Handoff**: `handoffs/H-001.md`
+- **Objective**: Dedicated 1-on-1 General Bot with clean Apple light theme and in-chat memory.
+- **Status**: `COMPLETE`
+- **Active Task**: `tasks/T-004.md`
+- **Last Handoff**: `handoffs/H-002.md`
 - **Safety Mode**: `Solo Runtime (Permission Ladder Active)`
 
 ---
@@ -24,7 +24,7 @@
 ## 📌 Task Pipeline
 
 ### 🚀 Active Task
-- [`tasks/T-001.md`](tasks/T-001.md) — Implement Solo Runtime File Contract Harness (Disk contract, Handoff schema validator, Board viewer)
+- [`tasks/T-004.md`](tasks/T-004.md) — Dedicated 1-on-1 General Bot UI Redesign & In-Chat Memory
 
 ### 📥 Backlog (TODO)
 - [`tasks/T-002.md`](tasks/T-002.md) — Autonomous Tool Calling for Search & File System in solo agent loop
@@ -32,6 +32,7 @@
 
 ### ✅ Completed (DONE)
 - [`tasks/T-000.md`](tasks/T-000.md) — LobeChat Glassmorphism UI, shadcn Trace reasoning stream, and live code artifacts
+- [`tasks/T-001.md`](tasks/T-001.md) — Implement Solo Runtime File Contract Harness (Disk contract, Handoff schema validator, Board viewer)
 
 ---
 
