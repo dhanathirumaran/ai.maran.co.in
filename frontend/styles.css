@@ -438,6 +438,101 @@ html, body {
   font-size: 12px;
 }
 
+/* Reasoning / Chain of Thought Trace UI */
+.reasoning-trace {
+  border: 1px solid var(--border-color);
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-md);
+  margin-bottom: 14px;
+  overflow: hidden;
+  font-size: 13px;
+  transition: border-color var(--transition-fast);
+}
+
+.reasoning-trace[open] {
+  border-color: rgba(88, 166, 255, 0.3);
+}
+
+.reasoning-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--text-secondary);
+  font-weight: 500;
+  background-color: var(--bg-secondary);
+  list-style: none;
+  font-size: 12px;
+  transition: all var(--transition-fast);
+}
+
+.reasoning-summary::-webkit-details-marker {
+  display: none;
+}
+
+.reasoning-summary:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-tertiary);
+}
+
+.reasoning-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.reasoning-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--text-muted);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.reasoning-check {
+  color: var(--success-color);
+  font-weight: bold;
+}
+
+.reasoning-chevron {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.reasoning-trace[open] .reasoning-chevron {
+  transform: rotate(180deg);
+}
+
+.reasoning-content {
+  padding: 12px 14px;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-family: var(--font-family);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 280px;
+  overflow-y: auto;
+  background-color: rgba(0, 0, 0, 0.2);
+  font-size: 12.5px;
+}
+
+.answer-body {
+  width: 100%;
+}
+
 /* Markdown styling inside assistant message */
 .message-bubble p {
   margin-bottom: 12px;

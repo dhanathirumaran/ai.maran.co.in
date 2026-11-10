@@ -295,7 +295,7 @@
       const atts = typeof msg.attachments === 'string'
         ? JSON.parse(msg.attachments)
         : (msg.attachments || (msg.attachments_json ? JSON.parse(msg.attachments_json) : null));
-      appendMessageUI(msg.role, msg.content, atts);
+      appendMessageUI(msg.role, msg.content, atts, msg.reasoning);
     });
     scrollToBottom();
   }
@@ -516,6 +516,88 @@
     }
 
     let accumulatedText = '';
+    let accumulatedReasoning = '';
+    let isThinking = false;
+    let thinkingStartTime = null;
+    let reasoningDetailsEl = null;
+    let reasoningSummaryEl = null;
+    let reasoningContentEl = null;
+    let insideThinkTag = false;
+
+    function handleReasoningToken(chunk) {
+      if (!chunk) return;
+      if (!reasoningDetailsEl) {
+        thinkingStartTime = Date.now();
+        isThinking = true;
+        reasoningDetailsEl = document.createElement('details');
+        reasoningDetailsEl.className = 'reasoning-trace';
+        reasoningDetailsEl.open = true;
+
+        reasoningSummaryEl = document.createElement('summary');
+        reasoningSummaryEl.className = 'reasoning-summary';
+        reasoningSummaryEl.innerHTML = `
+          <span class="reasoning-spinner"></span>
+          <span>Thinking...</span>
+          <span class="reasoning-chevron">▼</span>
+        `;
+
+        reasoningContentEl = document.createElement('div');
+        reasoningContentEl.className = 'reasoning-content';
+
+        reasoningDetailsEl.appendChild(reasoningSummaryEl);
+        reasoningDetailsEl.appendChild(reasoningContentEl);
+
+        const answerBody = assistantBubble.querySelector('.answer-body') || assistantBubble;
+        assistantBubble.insertBefore(reasoningDetailsEl, answerBody);
+      }
+
+      accumulatedReasoning += chunk;
+      reasoningContentEl.textContent = accumulatedReasoning;
+      reasoningContentEl.scrollTop = reasoningContentEl.scrollHeight;
+      scrollToBottom();
+    }
+
+    function handleContentToken(chunk) {
+      if (!chunk) return;
+
+      // Handle <think> tags if model emits them in content
+      if (chunk.includes('<think>')) {
+        insideThinkTag = true;
+        const parts = chunk.split('<think>');
+        if (parts[0]) handleContentToken(parts[0]);
+        if (parts[1]) handleReasoningToken(parts[1]);
+        return;
+      }
+      if (insideThinkTag) {
+        if (chunk.includes('</think>')) {
+          const parts = chunk.split('</think>');
+          handleReasoningToken(parts[0]);
+          insideThinkTag = false;
+          if (parts[1]) handleContentToken(parts[1]);
+        } else {
+          handleReasoningToken(chunk);
+        }
+        return;
+      }
+
+      // If we were thinking and real answer arrived, collapse thinking box
+      if (isThinking && reasoningDetailsEl) {
+        isThinking = false;
+        const duration = ((Date.now() - (thinkingStartTime || Date.now())) / 1000).toFixed(1);
+        reasoningSummaryEl.innerHTML = `
+          <span class="reasoning-check">✓</span>
+          <span>Thought for ${duration}s</span>
+          <span class="reasoning-chevron">▼</span>
+        `;
+        reasoningDetailsEl.open = false; // Auto-collapse!
+      }
+
+      accumulatedText += chunk;
+      const answerBody = assistantBubble.querySelector('.answer-body') || assistantBubble;
+      renderMarkdownInto(answerBody, accumulatedText);
+      answerBody.appendChild(cursor);
+      scrollToBottom();
+    }
 
     try {
       if (state.settings.serverUrl) {
@@ -541,11 +623,9 @@
         });
 
         if (!response.ok) throw new Error(`Server returned HTTP ${response.status}`);
-        await readSseStream(response.body, (chunk) => {
-          accumulatedText += chunk;
-          renderMarkdownInto(assistantBubble, accumulatedText);
-          assistantBubble.appendChild(cursor);
-          scrollToBottom();
+        await readSseStream(response.body, {
+          onContent: handleContentToken,
+          onReasoning: handleReasoningToken,
         });
       } else {
         // --- DIRECT LLM API MODE (Standalone in APK / Browser) ---
@@ -565,7 +645,6 @@
 
         // Add history messages
         if (currentConv && currentConv.messages) {
-          // exclude the user message we just pushed
           currentConv.messages.slice(0, -1).forEach(m => {
             messages.push({ role: m.role, content: m.content });
           });
@@ -602,7 +681,7 @@
           method: 'POST',
           headers: headers,
           body: JSON.stringify({
-            model: state.settings.model || 'gemini-2.0-flash',
+            model: state.settings.model || 'ddgw/gpt-5.4-mini',
             messages: messages,
             stream: true,
             temperature: state.settings.temperature,
@@ -616,11 +695,9 @@
           throw new Error(`API HTTP ${response.status}: ${errBody || response.statusText}`);
         }
 
-        await readSseStream(response.body, (chunk) => {
-          accumulatedText += chunk;
-          renderMarkdownInto(assistantBubble, accumulatedText);
-          assistantBubble.appendChild(cursor);
-          scrollToBottom();
+        await readSseStream(response.body, {
+          onContent: handleContentToken,
+          onReasoning: handleReasoningToken,
         });
       }
     } catch (err) {
@@ -630,18 +707,32 @@
         console.error('Chat error:', err);
         accumulatedText += `\n\n> ⚠️ **Error:** ${err.message}`;
       }
-      renderMarkdownInto(assistantBubble, accumulatedText);
+      const answerBody = assistantBubble.querySelector('.answer-body') || assistantBubble;
+      renderMarkdownInto(answerBody, accumulatedText);
     } finally {
       cursor.remove();
       setGeneratingState(false);
-      renderMarkdownInto(assistantBubble, accumulatedText);
 
-      // Save assistant message to current conversation
-      if (currentConv && accumulatedText) {
+      if (isThinking && reasoningDetailsEl) {
+        const duration = ((Date.now() - (thinkingStartTime || Date.now())) / 1000).toFixed(1);
+        reasoningSummaryEl.innerHTML = `
+          <span class="reasoning-check">✓</span>
+          <span>Thought for ${duration}s</span>
+          <span class="reasoning-chevron">▼</span>
+        `;
+        reasoningDetailsEl.open = false;
+      }
+
+      const answerBody = assistantBubble.querySelector('.answer-body') || assistantBubble;
+      renderMarkdownInto(answerBody, accumulatedText);
+
+      // Save assistant message to current conversation with reasoning
+      if (currentConv && (accumulatedText || accumulatedReasoning)) {
         currentConv.messages.push({
           id: generateId(),
           role: 'assistant',
           content: accumulatedText,
+          reasoning: accumulatedReasoning,
           created_at: Date.now(),
         });
         currentConv.updated_at = Date.now();
@@ -652,10 +743,12 @@
   }
 
   // --- SSE Stream Parser ---
-  async function readSseStream(readableStream, onChunk) {
+  async function readSseStream(readableStream, callbacks) {
+    const { onContent, onReasoning } = typeof callbacks === 'function' ? { onContent: callbacks } : callbacks;
     const reader = readableStream.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+    let isNextReasoning = false;
 
     while (true) {
       const { value, done } = await reader.read();
@@ -671,15 +764,33 @@
 
         if (trimmed === 'data: [DONE]') return;
 
+        if (trimmed.startsWith('event: reasoning')) {
+          isNextReasoning = true;
+          continue;
+        }
+
         if (trimmed.startsWith('data: ')) {
           const dataStr = trimmed.slice(6);
+          if (isNextReasoning) {
+            isNextReasoning = false;
+            if (onReasoning) onReasoning(dataStr);
+            continue;
+          }
+
           try {
             const parsed = JSON.parse(dataStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) onChunk(content);
+            const delta = parsed.choices?.[0]?.delta;
+            if (delta) {
+              if (delta.reasoning_content && onReasoning) {
+                onReasoning(delta.reasoning_content);
+              }
+              if (delta.content && onContent) {
+                onContent(delta.content);
+              }
+            }
           } catch {
             // Direct text chunk
-            if (dataStr !== '[DONE]') onChunk(dataStr);
+            if (dataStr !== '[DONE]' && onContent) onContent(dataStr);
           }
         }
       }
@@ -738,7 +849,7 @@
     container.textContent = markdownText;
   }
 
-  function appendMessageUI(role, content, attachments) {
+  function appendMessageUI(role, content, attachments, reasoning) {
     const row = document.createElement('div');
     row.className = `message-row ${role}`;
 
@@ -765,7 +876,25 @@
     }
 
     if (role === 'assistant') {
-      renderMarkdownInto(bubble, content);
+      // If historical reasoning exists, render collapsible block
+      if (reasoning && reasoning.trim().length > 0) {
+        const details = document.createElement('details');
+        details.className = 'reasoning-trace';
+        details.innerHTML = `
+          <summary class="reasoning-summary">
+            <span class="reasoning-check">✓</span>
+            <span>Thought Process</span>
+            <span class="reasoning-chevron">▼</span>
+          </summary>
+          <div class="reasoning-content">${escapeHtml(reasoning)}</div>
+        `;
+        bubble.appendChild(details);
+      }
+
+      const answerBody = document.createElement('div');
+      answerBody.className = 'answer-body';
+      renderMarkdownInto(answerBody, content);
+      bubble.appendChild(answerBody);
     } else {
       const textDiv = document.createElement('div');
       textDiv.textContent = content;

@@ -145,6 +145,11 @@ pub async fn chat_stream(
 
         while let Some(item) = upstream_rx.recv().await {
             match item {
+                StreamItem::Reasoning(text) => {
+                    let _ = tx
+                        .send(Ok(Event::default().event("reasoning").data(text)))
+                        .await;
+                }
                 StreamItem::Chunk(text) => {
                     full_assistant_content.push_str(&text);
                     let _ = tx.send(Ok(Event::default().data(text))).await;

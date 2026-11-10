@@ -10,6 +10,7 @@ use tracing::{error, info};
 #[derive(Debug)]
 pub enum StreamItem {
     Chunk(String),
+    Reasoning(String),
     Done,
     Error(String),
 }
@@ -191,6 +192,11 @@ impl LlmClient {
                                     if let Some(choices) = chunk.choices {
                                         for choice in choices {
                                             if let Some(delta) = choice.delta {
+                                                if let Some(reasoning) = delta.reasoning_content {
+                                                    let _ = tx
+                                                        .send(StreamItem::Reasoning(reasoning))
+                                                        .await;
+                                                }
                                                 if let Some(content) = delta.content {
                                                     let _ = tx
                                                         .send(StreamItem::Chunk(content))

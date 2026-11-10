@@ -132,4 +132,5 @@ pub struct OpenAIChoiceChunk {
 pub struct OpenAIDelta {
     pub role: Option<String>,
     pub content: Option<String>,
+    pub reasoning_content: Option<String>,
 }
