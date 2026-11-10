@@ -4,21 +4,22 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.view.KeyEvent
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
-import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.webkit.WebViewAssetLoader
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
+    private lateinit var assetLoader: WebViewAssetLoader
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
 
     private val filePickerLauncher = registerForActivityResult(
@@ -29,8 +30,7 @@ class MainActivity : AppCompatActivity() {
                 val clipData = result.data?.clipData
                 if (clipData != null) {
                     val count = clipData.itemCount
-                    val uris = Array(count) { i -> clipData.getItemAt(i).uri }
-                    uris
+                    Array(count) { i -> clipData.getItemAt(i).uri }
                 } else {
                     val dataString = result.data?.dataString
                     if (dataString != null) arrayOf(Uri.parse(dataString)) else null
@@ -50,14 +50,20 @@ class MainActivity : AppCompatActivity() {
         webView = WebView(this)
         setContentView(webView)
 
+        // Configure official Android WebViewAssetLoader for HTTPS virtual origin
+        assetLoader = WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .build()
+
         setupWebViewSettings()
         setupClients()
         setupBackNavigation()
 
-        // Load production server or local fallback assets
-        loadEntryUrl()
+        // Load through virtual HTTPS domain
+        webView.loadUrl("https://appassets.androidplatform.net/assets/index.html")
     }
 
+    @Suppress("DEPRECATION")
     private fun setupWebViewSettings() {
         val settings = webView.settings
         settings.javaScriptEnabled = true
@@ -65,6 +71,8 @@ class MainActivity : AppCompatActivity() {
         settings.databaseEnabled = true
         settings.allowFileAccess = true
         settings.allowContentAccess = true
+        settings.allowFileAccessFromFileURLs = true
+        settings.allowUniversalAccessFromFileURLs = true
         settings.loadWithOverviewMode = true
         settings.useWideViewPort = true
         settings.cacheMode = WebSettings.LOAD_DEFAULT
@@ -73,16 +81,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupClients() {
         webView.webViewClient = object : WebViewClient() {
-            override fun onReceivedError(
+            override fun shouldInterceptRequest(
                 view: WebView?,
-                request: WebResourceRequest?,
-                error: WebResourceError?
-            ) {
-                // If remote connection fails, fallback gracefully to bundled offline assets
-                val url = request?.url?.toString() ?: ""
-                if (url.startsWith("http") && request?.isForMainFrame == true) {
-                    view?.loadUrl("file:///android_asset/index.html")
-                }
+                request: WebResourceRequest?
+            ): WebResourceResponse? {
+                val url = request?.url ?: return null
+                return assetLoader.shouldInterceptRequest(url)
             }
         }
 
@@ -109,11 +113,6 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
         }
-    }
-
-    private fun loadEntryUrl() {
-        // Try ai.maran.co.in first, fallback to offline asset package
-        webView.loadUrl("file:///android_asset/index.html")
     }
 
     private fun setupBackNavigation() {

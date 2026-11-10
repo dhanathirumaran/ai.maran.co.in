@@ -166,11 +166,17 @@
       <div class="modal-body">
         <label>Quick Provider Presets</label>
         <div class="provider-presets">
+          <button type="button" class="preset-btn" data-preset="omni">PulseMind Omni</button>
           <button type="button" class="preset-btn" data-preset="gemini">Google Gemini</button>
           <button type="button" class="preset-btn" data-preset="groq">Groq</button>
           <button type="button" class="preset-btn" data-preset="openai">OpenAI</button>
           <button type="button" class="preset-btn" data-preset="ollama">Local Ollama</button>
           <button type="button" class="preset-btn" data-preset="deepseek">DeepSeek</button>
+        </div>
+
+        <div class="form-group">
+          <label for="settingServerUrl">Server URL (Optional)</label>
+          <input type="text" id="settingServerUrl" placeholder="Leave empty for direct API mode, or https://ai.maran.co.in">
         </div>
 
         <div class="form-group">
