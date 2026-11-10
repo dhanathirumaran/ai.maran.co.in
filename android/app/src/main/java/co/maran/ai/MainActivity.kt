@@ -1,4 +1,4 @@
-package in.co.maran.ai
+package co.maran.ai
 
 import android.annotation.SuppressLint
 import android.content.Intent

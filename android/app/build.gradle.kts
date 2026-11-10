@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "in.co.maran.ai"
+    namespace = "co.maran.ai"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "in.co.maran.ai"
+        applicationId = "co.maran.ai"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
