@@ -105,6 +105,7 @@
     closeSettingsModal: document.getElementById('closeSettingsModal'),
     saveSettingsBtn: document.getElementById('saveSettingsBtn'),
     resetSettingsBtn: document.getElementById('resetSettingsBtn'),
+    toggleKeyVisibility: document.getElementById('toggleKeyVisibility'),
     settingServerUrl: document.getElementById('settingServerUrl'),
     settingBaseUrl: document.getElementById('settingBaseUrl'),
     settingApiKey: document.getElementById('settingApiKey'),
@@ -866,6 +867,12 @@
     });
 
     elements.closeSettingsModal.addEventListener('click', () => closeModal(elements.settingsModal));
+
+    elements.toggleKeyVisibility.addEventListener('click', () => {
+      const isPassword = elements.settingApiKey.type === 'password';
+      elements.settingApiKey.type = isPassword ? 'text' : 'password';
+      elements.toggleKeyVisibility.textContent = isPassword ? '🙈' : '👁️';
+    });
 
     elements.settingTemperature.addEventListener('input', (e) => {
       elements.tempVal.textContent = e.target.value;
